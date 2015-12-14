@@ -580,6 +580,7 @@ bool GPG_Application::initEngine(GHOST_IWindow* window, const int stereoMode)
 		bool useLists = (SYS_GetCommandLineInt(syshandle, "displaylists", gm->flag & GAME_DISPLAY_LISTS) != 0) && GPU_display_list_support();
 		bool showBoundingBox = (SYS_GetCommandLineInt(syshandle, "show_bounding_box", gm->flag & GAME_SHOW_BOUNDING_BOX) != 0);
 		bool showArmatures = (SYS_GetCommandLineInt(syshandle, "show_armatures", gm->flag & GAME_SHOW_ARMATURES) != 0);
+		bool showRenderDebugInfo = (SYS_GetCommandLineInt(syshandle, "show_render_debug_info", gm->flag & GAME_SHOW_RENDER_DEBUG_INFO) != 0);
 		bool nodepwarnings = (SYS_GetCommandLineInt(syshandle, "ignore_deprecation_warnings", 1) != 0);
 		bool restrictAnimFPS = (gm->flag & GAME_RESTRICT_ANIM_UPDATES) != 0;
 
@@ -664,6 +665,7 @@ bool GPG_Application::initEngine(GHOST_IWindow* window, const int stereoMode)
 		m_ketsjiengine->SetRestrictAnimationFPS(restrictAnimFPS);
 		m_ketsjiengine->SetShowBoundingBox(showBoundingBox);
 		m_ketsjiengine->SetShowArmatures(showArmatures);
+		m_ketsjiengine->SetShowRenderDebugInfo(showRenderDebugInfo);
 
 		//set the global settings (carried over if restart/load new files)
 		m_ketsjiengine->SetGlobalSettings(m_globalSettings);

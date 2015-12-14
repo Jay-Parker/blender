@@ -871,6 +871,7 @@ typedef struct GameData {
 #define GAME_NO_MATERIAL_CACHING			(1 << 17)
 #define GAME_SHOW_BOUNDING_BOX				(1 << 18)
 #define GAME_SHOW_ARMATURES					(1 << 19)
+#define GAME_SHOW_RENDER_DEBUG_INFO			(1 << 20)
 /* Note: GameData.flag is now an int (max 32 flags). A short could only take 16 flags */
 
 /* GameData.playerflag */
