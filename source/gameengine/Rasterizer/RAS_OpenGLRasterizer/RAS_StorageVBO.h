@@ -41,8 +41,8 @@ public:
 	VBO(RAS_DisplayArray *data, unsigned int indices);
 	virtual ~VBO();
 
-	void Bind(int texco_num, RAS_IRasterizer::TexCoGen *texco, int attrib_num, RAS_IRasterizer::TexCoGen *attrib, int *attrib_layer);
-	void Unbind(int attrib_num);
+	void Bind(RAS_IRasterizer::TexCoGenList *texCoGenList, RAS_IRasterizer::AttribList *attribList);
+	void Unbind(RAS_IRasterizer::TexCoGenList *texCoGenList, RAS_IRasterizer::AttribList *attribList);
 	void Draw();
 
 	void UpdateData();
@@ -67,7 +67,7 @@ private:
 class RAS_StorageVBO : public RAS_IStorage
 {
 public:
-	RAS_StorageVBO(int *texco_num, RAS_IRasterizer::TexCoGen *texco, int *attrib_num, RAS_IRasterizer::TexCoGen *attrib, int *attrib_layer);
+	RAS_StorageVBO();
 	virtual ~RAS_StorageVBO();
 
 	virtual bool Init();
@@ -84,13 +84,6 @@ public:
 
 protected:
 	RAS_IRasterizer::DrawType m_drawingmode;
-
-	int *m_texco_num;
-	int *m_attrib_num;
-
-	RAS_IRasterizer::TexCoGen *m_texco;
-	RAS_IRasterizer::TexCoGen *m_attrib;
-	int *m_attrib_layer;
 
 	VBO *GetVBO(RAS_DisplayArrayBucket *arrayBucket);
 

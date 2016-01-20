@@ -78,6 +78,8 @@ public:
 	RAS_DisplayArrayBucket(RAS_MaterialBucket *bucket, RAS_DisplayArray *array, RAS_MeshObject *mesh);
 	~RAS_DisplayArrayBucket();
 
+	RAS_MaterialBucket *GetBucket() const;
+
 	/// \section Reference Count Management.
 	RAS_DisplayArrayBucket *AddRef();
 	RAS_DisplayArrayBucket *Release();

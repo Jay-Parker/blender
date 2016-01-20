@@ -87,13 +87,8 @@ void RAS_DisplayList::End(RAS_IRasterizer::DrawType drawmode, LIST_TYPE type)
 	glCallList(m_list[drawmode][type]);
 }
 
-RAS_StorageVA::RAS_StorageVA(int *texco_num, RAS_IRasterizer::TexCoGen *texco, int *attrib_num, RAS_IRasterizer::TexCoGen *attrib, int *attrib_layer) :
-	m_drawingmode(RAS_IRasterizer::KX_TEXTURED),
-	m_texco_num(texco_num),
-	m_attrib_num(attrib_num),
-	m_texco(texco),
-	m_attrib(attrib),
-	m_attrib_layer(attrib_layer)
+RAS_StorageVA::RAS_StorageVA()
+	:m_drawingmode(RAS_IRasterizer::KX_TEXTURED)
 {
 }
 
@@ -122,18 +117,20 @@ void RAS_StorageVA::BindPrimitives(RAS_DisplayArrayBucket *arrayBucket)
 	bool wireframe = m_drawingmode <= RAS_IRasterizer::KX_WIREFRAME;
 	RAS_TexVert *vertexarray = array->m_vertex.data();
 
-	if (!wireframe)
-		EnableTextures(true);
-
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_NORMAL_ARRAY);
 
 	glVertexPointer(3, GL_FLOAT, stride, vertexarray->getXYZ());
 	glNormalPointer(GL_FLOAT, stride, vertexarray->getNormal());
 
-	if (!wireframe) {
-		TexCoordPtr(vertexarray);
-	}
+	/*if (!wireframe) {
+		std::cout << __func__ << std::endl;
+		RAS_IPolyMaterial *polymat = arrayBucket->GetBucket()->GetPolyMaterial();
+		RAS_IRasterizer::TexCoGenList *texCoGenList = polymat->GetTexCoGenList();
+		RAS_IRasterizer::AttribList *attribList = polymat->GetAttribList();
+		EnableTextures(texCoGenList, attribList, true);
+		TexCoordPtr(texCoGenList, attribList, vertexarray);
+	}*/
 
 	if (displayList) {
 		displayList->End(m_drawingmode, RAS_DisplayList::BIND_LIST);
@@ -150,10 +147,11 @@ void RAS_StorageVA::UnbindPrimitives(RAS_DisplayArrayBucket *arrayBucket)
 	bool wireframe = m_drawingmode <= RAS_IRasterizer::KX_WIREFRAME;
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_NORMAL_ARRAY);
-	if (!wireframe) {
+	/*if (!wireframe) {
 		glDisableClientState(GL_COLOR_ARRAY);
-		EnableTextures(false);
-	}
+		RAS_IPolyMaterial *polymat = arrayBucket->GetBucket()->GetPolyMaterial();
+		EnableTextures(polymat->GetTexCoGenList(), polymat->GetAttribList(), false);
+	}*/
 
 	if (displayList) {
 		displayList->End(m_drawingmode, RAS_DisplayList::UNBIND_LIST);
@@ -217,17 +215,18 @@ RAS_DisplayList *RAS_StorageVA::GetDisplayList(RAS_DisplayArrayBucket *arrayBuck
 	return displayList;
 }
 
-void RAS_StorageVA::TexCoordPtr(const RAS_TexVert *tv)
+void RAS_StorageVA::TexCoordPtr(RAS_IRasterizer::TexCoGenList *texCoGenList,
+								RAS_IRasterizer::AttribList *attribList,
+								const RAS_TexVert *tv)
 {
 	/* note: this function must closely match EnableTextures to enable/disable
 	 * the right arrays, otherwise coordinate and attribute pointers from other
 	 * materials can still be used and cause crashes */
-	int unit;
 
-	if (GLEW_ARB_multitexture) {
-		for (unit = 0; unit < *m_texco_num; unit++) {
+	if (GLEW_ARB_multitexture && texCoGenList) {
+		for (unsigned short unit = 0, size = texCoGenList->size(); unit < size; ++unit) {
 			glClientActiveTextureARB(GL_TEXTURE0_ARB + unit);
-			switch (m_texco[unit]) {
+			switch (texCoGenList->at(unit)) {
 				case RAS_IRasterizer::RAS_TEXCO_ORCO:
 				case RAS_IRasterizer::RAS_TEXCO_GLOB:
 				{
@@ -253,13 +252,14 @@ void RAS_StorageVA::TexCoordPtr(const RAS_TexVert *tv)
 					break;
 			}
 		}
-
 		glClientActiveTextureARB(GL_TEXTURE0_ARB);
 	}
 
-	if (GLEW_ARB_vertex_program) {
-		for (unit = 0; unit < *m_attrib_num; unit++) {
-			switch (m_attrib[unit]) {
+	if (GLEW_ARB_vertex_program && attribList) {
+		for (RAS_IRasterizer::AttribList::iterator it = attribList->begin(), end = attribList->end(); it != end; ++it) {
+			const RAS_IRasterizer::Attrib& attrib = (*it);
+			const unsigned int unit = attrib.index;
+			switch (attrib.texco) {
 				case RAS_IRasterizer::RAS_TEXCO_ORCO:
 				case RAS_IRasterizer::RAS_TEXCO_GLOB:
 				{
@@ -268,7 +268,7 @@ void RAS_StorageVA::TexCoordPtr(const RAS_TexVert *tv)
 				}
 				case RAS_IRasterizer::RAS_TEXCO_UV:
 				{
-					glVertexAttribPointerARB(unit, 2, GL_FLOAT, GL_FALSE, sizeof(RAS_TexVert), tv->getUV(m_attrib_layer[unit]));
+					glVertexAttribPointerARB(unit, 2, GL_FLOAT, GL_FALSE, sizeof(RAS_TexVert), tv->getUV(attrib.layer));
 					break;
 				}
 				case RAS_IRasterizer::RAS_TEXCO_NORM:
@@ -293,21 +293,15 @@ void RAS_StorageVA::TexCoordPtr(const RAS_TexVert *tv)
 	}
 }
 
-void RAS_StorageVA::EnableTextures(bool enable)
+void RAS_StorageVA::EnableTextures(RAS_IRasterizer::TexCoGenList *texCoGenList,
+								   RAS_IRasterizer::AttribList *attribList,
+								   bool enable)
 {
-	RAS_IRasterizer::TexCoGen *texco, *attrib;
-	int unit, texco_num, attrib_num;
-
-	texco = m_texco;
-	texco_num = *m_texco_num;
-	attrib = m_attrib;
-	attrib_num = *m_attrib_num;
-
-	if (GLEW_ARB_multitexture) {
-		for (unit = 0; unit < texco_num; unit++) {
+	if (GLEW_ARB_multitexture && texCoGenList) {
+		for (unsigned short unit = 0, size = texCoGenList->size(); unit < size; ++unit) {
 			glClientActiveTextureARB(GL_TEXTURE0_ARB + unit);
 
-			switch (texco[unit]) {
+			switch (texCoGenList->at(unit)) {
 				case RAS_IRasterizer::RAS_TEXCO_ORCO:
 				case RAS_IRasterizer::RAS_TEXCO_GLOB:
 				case RAS_IRasterizer::RAS_TEXCO_UV:
@@ -333,7 +327,7 @@ void RAS_StorageVA::EnableTextures(bool enable)
 		glClientActiveTextureARB(GL_TEXTURE0_ARB);
 	}
 	else {
-		if (texco_num) {
+		if (texCoGenList && texCoGenList->size() > 0) {
 			if (enable) {
 				glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 			}
@@ -343,9 +337,11 @@ void RAS_StorageVA::EnableTextures(bool enable)
 		}
 	}
 
-	if (GLEW_ARB_vertex_program) {
-		for (unit = 0; unit < attrib_num; unit++) {
-			switch (attrib[unit]) {
+	if (GLEW_ARB_vertex_program && attribList) {
+		for (RAS_IRasterizer::AttribList::iterator it = attribList->begin(), end = attribList->end(); it != end; ++it) {
+			const RAS_IRasterizer::Attrib& attrib = (*it);
+			const unsigned int unit = attrib.index;
+			switch (attrib.texco) {
 				case RAS_IRasterizer::RAS_TEXCO_ORCO:
 				case RAS_IRasterizer::RAS_TEXCO_GLOB:
 				case RAS_IRasterizer::RAS_TEXCO_UV:

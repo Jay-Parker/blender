@@ -105,8 +105,6 @@ RAS_OpenGLRasterizer::RAS_OpenGLRasterizer(RAS_ICanvas* canvas, RAS_STORAGE_TYPE
 	m_clientobject(NULL),
 	m_auxilaryClientInfo(NULL),
 	m_drawingmode(KX_TEXTURED),
-	m_texco_num(0),
-	m_attrib_num(0),
 	//m_last_alphablend(GPU_BLEND_SOLID),
 	m_last_frontface(true),
 	m_storage_type(storage),
@@ -125,14 +123,14 @@ RAS_OpenGLRasterizer::RAS_OpenGLRasterizer(RAS_ICanvas* canvas, RAS_STORAGE_TYPE
 	m_prevafvalue = GPU_get_anisotropic();
 
 	if (m_storage_type == RAS_VBO /*|| m_storage_type == RAS_AUTO_STORAGE && GLEW_ARB_vertex_buffer_object*/) {
-		m_storage = new RAS_StorageVBO(&m_texco_num, m_texco, &m_attrib_num, m_attrib, m_attrib_layer);
+		m_storage = new RAS_StorageVBO();
 	}
 	else if ((m_storage_type == RAS_VA) || (m_storage_type == RAS_AUTO_STORAGE)) {
-		m_storage = new RAS_StorageVA(&m_texco_num, m_texco, &m_attrib_num, m_attrib, m_attrib_layer);
+		m_storage = new RAS_StorageVA();
 	}
 	else {
 		printf("Unknown rasterizer storage type, falling back to vertex arrays\n");
-		m_storage = new RAS_StorageVA(&m_texco_num, m_texco, &m_attrib_num, m_attrib, m_attrib_layer);
+		m_storage = new RAS_StorageVA();
 	}
 
 	glGetIntegerv(GL_MAX_LIGHTS, (GLint *)&m_numgllights);
@@ -694,7 +692,7 @@ void RAS_OpenGLRasterizer::IndexPrimitives_3DText(RAS_MeshSlot *ms, class RAS_IP
 		float v[4][3];
 		const float  *v_ptr[4] = {NULL};
 		const float *uv_ptr[4] = {NULL};
-		int glattrib, unit;
+		int glattrib;
 
 		for (j = 0; j < numvert; j++) {
 			vertex = &array->m_vertex[array->m_index[i + j]];
@@ -709,10 +707,14 @@ void RAS_OpenGLRasterizer::IndexPrimitives_3DText(RAS_MeshSlot *ms, class RAS_IP
 
 		// find the right opengl attribute
 		glattrib = -1;
-		if (GLEW_ARB_vertex_program)
-			for (unit = 0; unit < m_attrib_num; unit++)
-				if (m_attrib[unit] == RAS_TEXCO_UV)
+		const RAS_IRasterizer::AttribList *attribList = polymat->GetAttribList();
+		if (GLEW_ARB_vertex_program && attribList) {
+			for (unsigned short unit = 0, size = attribList->size(); unit < size; ++unit) {
+				if (attribList->at(unit).texco == RAS_TEXCO_UV) {
 					glattrib = unit;
+				}
+			}
+		}
 
 		GPU_render_text(
 		    polymat->GetMTexPoly(), polymat->GetDrawingMode(), mytext, mytext.Length(), polymat->GetMCol(),
@@ -720,36 +722,6 @@ void RAS_OpenGLRasterizer::IndexPrimitives_3DText(RAS_MeshSlot *ms, class RAS_IP
 	}
 
 	glDisableClientState(GL_COLOR_ARRAY);
-}
-
-void RAS_OpenGLRasterizer::SetTexCoordNum(int num)
-{
-	m_texco_num = num;
-	if (m_texco_num > RAS_MAX_TEXCO)
-		m_texco_num = RAS_MAX_TEXCO;
-}
-
-void RAS_OpenGLRasterizer::SetAttribNum(int num)
-{
-	m_attrib_num = num;
-	if (m_attrib_num > RAS_MAX_ATTRIB)
-		m_attrib_num = RAS_MAX_ATTRIB;
-}
-
-void RAS_OpenGLRasterizer::SetTexCoord(TexCoGen coords, int unit)
-{
-	// this changes from material to material
-	if (unit < RAS_MAX_TEXCO)
-		m_texco[unit] = coords;
-}
-
-void RAS_OpenGLRasterizer::SetAttrib(TexCoGen coords, int unit, int layer)
-{
-	// this changes from material to material
-	if (unit < RAS_MAX_ATTRIB) {
-		m_attrib[unit] = coords;
-		m_attrib_layer[unit] = layer;
-	}
 }
 
 void RAS_OpenGLRasterizer::BindPrimitives(RAS_DisplayArrayBucket *arrayBucket)

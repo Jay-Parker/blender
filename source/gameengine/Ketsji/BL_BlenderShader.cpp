@@ -64,31 +64,59 @@ void BL_BlenderShader::ParseAttribs()
 {
 	GPUVertexAttribs attribs;
 	GPU_material_vertex_attributes(m_GPUMat, &attribs);
-	int numattrib = GetAttribNum();
 
-	for (unsigned int i = 0; i < MAXTEX; ++i) {
-		m_uvLayers[i] = -1; // only to find bug.
-	}
+	for (unsigned short i = 0; i < attribs.totlayer; i++) {
+		RAS_IRasterizer::Attrib attrib;
+		attrib.index = attribs.layer[i].glindex;
+		attrib.layer = 0;
 
-	for (unsigned int i = 0; i < attribs.totlayer; ++i) {
-		if (attribs.layer[i].glindex > numattrib) {
-			continue;
-		}
-
-		if (attribs.layer[i].type == CD_MTFACE) {
-			const char *attribname = attribs.layer[i].name;
-			if (strlen(attribname) == 0) {
-				// The attribut use the default UV = the first one.
-				m_uvLayers[i] = 0;
-				continue;
-			}
-			for (unsigned int j = 0; j < MAXTEX; ++j) {
-				if (strcmp(m_blMaterial->uvsName[j], attribname) == 0) {
-					m_uvLayers[i] = j;
-					break;
+		switch (attribs.layer[i].type) {
+			case CD_MTFACE:
+			{
+				const char *attribname = attribs.layer[i].name;
+				if (strlen(attribname) == 0) {
+					// The attribut use the default UV = the first one.
+					attrib.layer = 0;
 				}
+				else {
+					for (unsigned int j = 0; j < MAXTEX; ++j) {
+						if (strcmp(m_blMaterial->uvsName[j], attribname) == 0) {
+							attrib.layer = j;
+							break;
+						}
+					}
+				}
+				attrib.texco = RAS_IRasterizer::RAS_TEXCO_UV;
+				break;
+			}
+			case CD_TANGENT:
+			{
+				attrib.texco = RAS_IRasterizer::RAS_TEXTANGENT;
+				break;
+			}
+			case CD_ORCO:
+			{
+				attrib.texco = RAS_IRasterizer::RAS_TEXCO_ORCO;
+				break;
+			}
+			case CD_NORMAL:
+			{
+				attrib.texco = RAS_IRasterizer::RAS_TEXCO_NORM;
+				break;
+			}
+			case CD_MCOL:
+			{
+				attrib.texco = RAS_IRasterizer::RAS_TEXCO_VCOL;
+				break;
+			}
+			default:
+			{
+				attrib.texco = RAS_IRasterizer::RAS_TEXCO_DISABLE;
+				break;
 			}
 		}
+
+		m_attribList.push_back(attrib);
 	}
 }
 
@@ -116,66 +144,9 @@ void BL_BlenderShader::SetProg(bool enable, double time, RAS_IRasterizer *rasty)
 	}
 }
 
-int BL_BlenderShader::GetAttribNum()
+RAS_IRasterizer::AttribList *BL_BlenderShader::GetAttribList()
 {
-	GPUVertexAttribs attribs;
-	int i, enabled = 0;
-
-	if (!Ok())
-		return enabled;
-
-	GPU_material_vertex_attributes(m_GPUMat, &attribs);
-
-	for (i = 0; i < attribs.totlayer; i++)
-		if (attribs.layer[i].glindex + 1 > enabled)
-			enabled = attribs.layer[i].glindex + 1;
-
-	if (enabled > BL_MAX_ATTRIB)
-		enabled = BL_MAX_ATTRIB;
-
-	return enabled;
-}
-
-void BL_BlenderShader::SetAttribs(RAS_IRasterizer *ras)
-{
-	GPUVertexAttribs attribs;
-	GPUMaterial *gpumat;
-	int i, attrib_num;
-
-	ras->SetAttribNum(0);
-
-	if (!Ok())
-		return;
-
-	gpumat = m_GPUMat;
-	if (ras->GetDrawingMode() == RAS_IRasterizer::KX_TEXTURED || (ras->GetDrawingMode() == RAS_IRasterizer::KX_SHADOW &&
-	                                                              m_blMaterial->alphablend != GEMAT_SOLID && !ras->GetUsingOverrideShader())) {
-		GPU_material_vertex_attributes(gpumat, &attribs);
-		attrib_num = GetAttribNum();
-
-		ras->SetTexCoordNum(0);
-		ras->SetAttribNum(attrib_num);
-		for (i = 0; i < attrib_num; i++)
-			ras->SetAttrib(RAS_IRasterizer::RAS_TEXCO_DISABLE, i);
-
-		for (i = 0; i < attribs.totlayer; i++) {
-			if (attribs.layer[i].glindex > attrib_num)
-				continue;
-
-			if (attribs.layer[i].type == CD_MTFACE)
-				ras->SetAttrib(RAS_IRasterizer::RAS_TEXCO_UV, attribs.layer[i].glindex, m_uvLayers[i]);
-			else if (attribs.layer[i].type == CD_TANGENT)
-				ras->SetAttrib(RAS_IRasterizer::RAS_TEXTANGENT, attribs.layer[i].glindex);
-			else if (attribs.layer[i].type == CD_ORCO)
-				ras->SetAttrib(RAS_IRasterizer::RAS_TEXCO_ORCO, attribs.layer[i].glindex);
-			else if (attribs.layer[i].type == CD_NORMAL)
-				ras->SetAttrib(RAS_IRasterizer::RAS_TEXCO_NORM, attribs.layer[i].glindex);
-			else if (attribs.layer[i].type == CD_MCOL)
-				ras->SetAttrib(RAS_IRasterizer::RAS_TEXCO_VCOL, attribs.layer[i].glindex);
-			else
-				ras->SetAttrib(RAS_IRasterizer::RAS_TEXCO_DISABLE, attribs.layer[i].glindex);
-		}
-	}
+	return &m_attribList;
 }
 
 void BL_BlenderShader::Update(RAS_MeshSlot *ms, RAS_IRasterizer *rasty)

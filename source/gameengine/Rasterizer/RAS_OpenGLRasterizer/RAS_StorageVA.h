@@ -64,7 +64,7 @@ public:
 class RAS_StorageVA : public RAS_IStorage
 {
 public:
-	RAS_StorageVA(int *texco_num, RAS_IRasterizer::TexCoGen *texco, int *attrib_num, RAS_IRasterizer::TexCoGen *attrib, int *attrib_layer);
+	RAS_StorageVA();
 	virtual ~RAS_StorageVA();
 
 	virtual bool Init();
@@ -82,17 +82,14 @@ public:
 protected:
 	RAS_IRasterizer::DrawType m_drawingmode;
 
-	int *m_texco_num;
-	int *m_attrib_num;
-
-	RAS_IRasterizer::TexCoGen *m_texco;
-	RAS_IRasterizer::TexCoGen *m_attrib;
-	int *m_attrib_layer;
-
 	RAS_DisplayList *GetDisplayList(RAS_DisplayArrayBucket *arrayBucket);
 
-	virtual void EnableTextures(bool enable);
-	virtual void TexCoordPtr(const RAS_TexVert *tv);
+	virtual void EnableTextures(RAS_IRasterizer::TexCoGenList *texCoGenList,
+								RAS_IRasterizer::AttribList *attribList,
+								bool enable);
+	virtual void TexCoordPtr(RAS_IRasterizer::TexCoGenList *texCoGenList,
+							 RAS_IRasterizer::AttribList *attribList,
+							 const RAS_TexVert *tv);
 
 
 #ifdef WITH_CXX_GUARDEDALLOC

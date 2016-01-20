@@ -133,11 +133,7 @@ class RAS_OpenGLRasterizer : public RAS_IRasterizer
 
 protected:
 	DrawType m_drawingmode;
-	TexCoGen m_texco[RAS_MAX_TEXCO];
-	TexCoGen m_attrib[RAS_MAX_ATTRIB];
-	int m_attrib_layer[RAS_MAX_ATTRIB];
-	int m_texco_num;
-	int m_attrib_num;
+
 	/* int m_last_alphablend; */
 	bool m_last_frontface;
 
@@ -257,11 +253,6 @@ public:
 
 	// We store each debug shape by scene.
 	std::map<SCA_IScene *, std::vector<OglDebugShape> > m_debugShapes;
-
-	virtual void SetTexCoordNum(int num);
-	virtual void SetAttribNum(int num);
-	virtual void SetTexCoord(TexCoGen coords, int unit);
-	virtual void SetAttrib(TexCoGen coords, int unit, int layer = 0);
 
 	void TexCoord(const RAS_TexVert &tv);
 

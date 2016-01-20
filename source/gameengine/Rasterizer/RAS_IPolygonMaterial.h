@@ -33,12 +33,12 @@
 #define __RAS_IPOLYGONMATERIAL_H__
 
 #include "STR_HashedString.h"
+#include "RAS_IRasterizer.h"
 
 #ifdef WITH_CXX_GUARDEDALLOC
 #include "MEM_guardedalloc.h"
 #endif
 
-class RAS_IRasterizer;
 class RAS_MeshSlot;
 struct MTexPoly;
 struct Material;
@@ -130,6 +130,9 @@ public:
 	const STR_String& GetTextureName() const;
 	unsigned int GetFlag() const;
 	int GetMaterialIndex() const;
+
+	virtual RAS_IRasterizer::TexCoGenList *GetTexCoGenList() const = 0;
+	virtual RAS_IRasterizer::AttribList *GetAttribList() const = 0;
 
 	virtual Material *GetBlenderMaterial() const = 0;
 	virtual Image *GetBlenderImage() const = 0;

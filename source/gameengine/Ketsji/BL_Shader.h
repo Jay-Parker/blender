@@ -9,6 +9,7 @@
 #include "EXP_PyObjectPlus.h"
 #include "BL_Material.h"
 #include "BL_Texture.h"
+#include "RAS_IRasterizer.h"
 #include "MT_Matrix4x4.h"
 #include "MT_Matrix3x3.h"
 #include "MT_Tuple2.h"
@@ -123,6 +124,8 @@ private:
 	bool mError;
 	bool mDirty;
 
+	RAS_IRasterizer::AttribList m_attribList;
+
 	// Stored uniform variables
 	BL_UniformVec mUniforms;
 	BL_UniformVecDef mPreDef;
@@ -174,7 +177,7 @@ public:
 	bool Ok() const;
 	unsigned int GetProg();
 	void SetProg(bool enable);
-	int GetAttribute() { return mAttr; }
+	RAS_IRasterizer::AttribList *GetAttribList();
 
 	// Apply methods : sets colected uniforms
 	void ApplyShader();

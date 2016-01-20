@@ -70,6 +70,11 @@ RAS_DisplayArrayBucket::~RAS_DisplayArrayBucket()
 	}
 }
 
+RAS_MaterialBucket *RAS_DisplayArrayBucket::GetBucket() const
+{
+	return m_bucket;
+}
+
 RAS_DisplayArrayBucket *RAS_DisplayArrayBucket::AddRef()
 {
 	++m_refcount;

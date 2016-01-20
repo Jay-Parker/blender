@@ -54,6 +54,9 @@ public:
 
 	void ActivateBlenderShaders(RAS_IRasterizer *rasty);
 
+	virtual RAS_IRasterizer::TexCoGenList *GetTexCoGenList() const;
+	virtual RAS_IRasterizer::AttribList *GetAttribList() const;
+
 	Material *GetBlenderMaterial() const;
 	Image *GetBlenderImage() const;
 	MTexPoly *GetMTexPoly() const;
@@ -128,6 +131,18 @@ private:
 	bool m_constructed; // if false, don't clean on exit
 	int m_lightLayer;
 
+	/** Texture coordinate attributs generated during the construction of this material.
+	 * They are used by the custom shader (BL_Shader) and multitexture material.
+	 */
+	RAS_IRasterizer::TexCoGenList m_texCoGenList;
+
+	/** Current texture coordinate attributs used by custom shader and
+	 * multitexture material.
+	 */
+	RAS_IRasterizer::TexCoGenList *m_curTexCoGenList;
+	/// Current vertex attributs used by blender shader or custom shader.
+	RAS_IRasterizer::AttribList *m_curAttribList;
+
 	struct {
 		float r, g, b, a;
 		float specr, specg, specb;
@@ -137,12 +152,14 @@ private:
 		float emit;
 	} m_savedData;
 
+	void ParseTexCoord();
+
 	void InitTextures();
 
 	void SetBlenderGLSLShader();
 
 	void ActivateGLMaterials(RAS_IRasterizer *rasty) const;
-	void ActivateTexGen(RAS_IRasterizer *ras) const;
+	void ActivateTexGen(RAS_IRasterizer *ras);
 
 	bool UsesLighting(RAS_IRasterizer *rasty) const;
 	void GetMaterialRGBAColor(unsigned char *rgba) const;

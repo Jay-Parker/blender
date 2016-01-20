@@ -35,7 +35,6 @@
 #include "MEM_guardedalloc.h"
 
 #include "RAS_MeshObject.h"
-#include "RAS_IRasterizer.h"
 
 #define spit(x) std::cout << x << std::endl;
 
@@ -480,6 +479,11 @@ void BL_Shader::SetProg(bool enable)
 			glUseProgramObjectARB(0);
 		}
 	}
+}
+
+RAS_IRasterizer::AttribList *BL_Shader::GetAttribList()
+{
+	return &m_attribList;
 }
 
 void BL_Shader::Update(RAS_MeshSlot *ms, RAS_IRasterizer *rasty)
@@ -1388,6 +1392,19 @@ KX_PYMETHODDEF_DOC(BL_Shader, setAttrib, "setAttrib(enum)")
 	}
 
 	mAttr = attr;
+
+	m_attribList.clear();
+
+	if (mAttr == SHD_TANGENT) {
+		RAS_IRasterizer::Attrib attrib1;
+		attrib1.texco = RAS_IRasterizer::RAS_TEXCO_DISABLE;
+		RAS_IRasterizer::Attrib attrib2;
+		attrib2.texco = RAS_IRasterizer::RAS_TEXTANGENT;
+
+		m_attribList.push_back(attrib1);
+		m_attribList.push_back(attrib2);
+	}
+
 	glUseProgramObjectARB(mShader);
 	glBindAttribLocationARB(mShader, mAttr, "Tangent");
 	Py_RETURN_NONE;

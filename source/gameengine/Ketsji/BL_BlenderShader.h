@@ -32,12 +32,13 @@
 #ifndef __BL_BLENDERSHADER_H__
 #define __BL_BLENDERSHADER_H__
 
+#include "RAS_IRasterizer.h"
+
 struct Material;
 struct Scene;
 struct GPUMaterial;
 class KX_Scene;
 class BL_Material;
-class RAS_IRasterizer;
 class RAS_MeshSlot;
 
 #define BL_MAX_ATTRIB 16
@@ -56,9 +57,7 @@ private:
 	int m_alphaBlend;
 	GPUMaterial *m_GPUMat;
 
-	/** The cooresponding uv layer index to the given attribut index.
-	 * If the attribut doesn't use UV info it will return -1. */
-	int m_uvLayers[BL_MAX_ATTRIB];
+	RAS_IRasterizer::AttribList m_attribList;
 
 	void ParseAttribs();
 
@@ -72,8 +71,7 @@ public:
 	}
 	void SetProg(bool enable, double time = 0.0, RAS_IRasterizer *rasty = NULL);
 
-	int GetAttribNum();
-	void SetAttribs(RAS_IRasterizer *ras);
+	RAS_IRasterizer::AttribList *GetAttribList();
 	void Update(RAS_MeshSlot *ms, RAS_IRasterizer * rasty);
 	void ReloadMaterial();
 	int GetAlphaBlend();

@@ -40,7 +40,6 @@
 
 #include "RAS_BucketManager.h"
 #include "RAS_MeshObject.h"
-#include "RAS_IRasterizer.h"
 
 #include "GPU_draw.h"
 
@@ -65,7 +64,9 @@ KX_BlenderMaterial::KX_BlenderMaterial()
 	m_scene(NULL),
 	m_userDefBlend(false),
 	m_modified(false),
-	m_constructed(false)
+	m_constructed(false),
+	m_curTexCoGenList(NULL),
+	m_curAttribList(NULL)
 {
 }
 
@@ -121,6 +122,29 @@ void KX_BlenderMaterial::Initialize(
 	m_flag |= ((m_material->ras_mode & CAST_SHADOW) != 0) ? RAS_CASTSHADOW : 0;
 	m_flag |= ((m_material->ras_mode & ONLY_SHADOW) != 0) ? RAS_ONLYSHADOW : 0;
 	m_flag |= ((ma->shade_flag & MA_OBCOLOR) != 0) ? RAS_OBJECTCOLOR : 0;
+
+	/*for (unsigned int i = 0, size = BL_Texture::GetMaxUnits(); i < size; i++) {
+		int mode = m_material->mapping[i].mapping;
+		RAS_IRasterizer::TexCoGen texco = RAS_IRasterizer::RAS_TEXCO_DISABLE;
+
+		if (mode & (USEREFL | USEOBJ)) {
+			texco = RAS_IRasterizer::RAS_TEXCO_GEN;
+		}
+		else if (mode & USEORCO) {
+			texco = RAS_IRasterizer::RAS_TEXCO_ORCO;
+		}
+		else if (mode & USENORM) {
+			texco = RAS_IRasterizer::RAS_TEXCO_NORM;
+		}
+		else if (mode & USEUV) {
+			texco = RAS_IRasterizer::RAS_TEXCO_UV;
+		}
+		else if (mode & USETANG) {
+			texco = RAS_IRasterizer::RAS_TEXTANGENT;
+		}
+
+		m_texCoGenList.push_back(texco);
+	}*/
 }
 
 KX_BlenderMaterial::~KX_BlenderMaterial()
@@ -265,6 +289,15 @@ void KX_BlenderMaterial::OnExit()
 	GPU_set_tpage(NULL, 1, m_material->alphablend);
 }
 
+RAS_IRasterizer::TexCoGenList *KX_BlenderMaterial::GetTexCoGenList() const
+{
+	return m_curTexCoGenList;
+}
+
+RAS_IRasterizer::AttribList *KX_BlenderMaterial::GetAttribList() const
+{
+	return m_curAttribList;
+}
 
 void KX_BlenderMaterial::SetShaderData(RAS_IRasterizer *ras)
 {
@@ -397,7 +430,8 @@ void KX_BlenderMaterial::ActivateBlenderShaders(RAS_IRasterizer *rasty)
 		rasty->SetLines(false);
 
 	ActivateGLMaterials(rasty);
-	m_blenderShader->SetAttribs(rasty);
+
+	m_curAttribList = m_blenderShader->GetAttribList();
 }
 
 void KX_BlenderMaterial::ActivateMat(RAS_IRasterizer *rasty)
@@ -445,6 +479,9 @@ void KX_BlenderMaterial::Desactivate(RAS_IRasterizer *rasty)
 	else if (GLEW_ARB_shader_objects && (m_blenderShader && m_blenderShader->Ok())) {
 		m_blenderShader->SetProg(false);
 	}
+
+	m_curTexCoGenList = NULL;
+	m_curAttribList = NULL;
 }
 
 bool KX_BlenderMaterial::UsesLighting(RAS_IRasterizer *rasty) const
@@ -510,39 +547,17 @@ void KX_BlenderMaterial::ActivateGLMaterials(RAS_IRasterizer *rasty) const
 }
 
 
-void KX_BlenderMaterial::ActivateTexGen(RAS_IRasterizer *ras) const
+void KX_BlenderMaterial::ActivateTexGen(RAS_IRasterizer *ras)
 {
 	if (ras->GetDrawingMode() == RAS_IRasterizer::KX_TEXTURED ||
-	    (ras->GetDrawingMode() == RAS_IRasterizer::KX_SHADOW &&
-	     m_material->alphablend != GEMAT_SOLID && !ras->GetUsingOverrideShader()))
+	   (ras->GetDrawingMode() == RAS_IRasterizer::KX_SHADOW &&
+	   m_material->alphablend != GEMAT_SOLID))
 	{
-		ras->SetAttribNum(0);
-		if (m_shader && GLEW_ARB_shader_objects) {
-			if (m_shader->GetAttribute() == BL_Shader::SHD_TANGENT) {
-				ras->SetAttrib(RAS_IRasterizer::RAS_TEXCO_DISABLE, 0);
-				ras->SetAttrib(RAS_IRasterizer::RAS_TEXTANGENT, 1);
-				ras->SetAttribNum(2);
-			}
+		if (GLEW_ARB_shader_objects && m_shader) {
+			m_curAttribList = m_shader->GetAttribList();
 		}
 
-		ras->SetTexCoordNum(m_material->num_enabled);
-
-		for (int i = 0; i < BL_Texture::GetMaxUnits(); i++) {
-			int mode = m_material->mapping[i].mapping;
-
-			if (mode & (USEREFL | USEOBJ))
-				ras->SetTexCoord(RAS_IRasterizer::RAS_TEXCO_GEN, i);
-			else if (mode & USEORCO)
-				ras->SetTexCoord(RAS_IRasterizer::RAS_TEXCO_ORCO, i);
-			else if (mode & USENORM)
-				ras->SetTexCoord(RAS_IRasterizer::RAS_TEXCO_NORM, i);
-			else if (mode & USEUV)
-				ras->SetTexCoord(RAS_IRasterizer::RAS_TEXCO_UV, i);
-			else if (mode & USETANG)
-				ras->SetTexCoord(RAS_IRasterizer::RAS_TEXTANGENT, i);
-			else
-				ras->SetTexCoord(RAS_IRasterizer::RAS_TEXCO_DISABLE, i);
-		}
+		m_curTexCoGenList = &m_texCoGenList;
 	}
 }
 
