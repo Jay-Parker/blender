@@ -33,6 +33,7 @@
 #include "glew-mx.h"
 
 VBO::VBO(RAS_DisplayArray *data, unsigned int indices)
+	:m_vaoInit(false)
 {
 	m_data = data;
 	m_size = data->m_vertex.size();
@@ -44,6 +45,8 @@ VBO::VBO(RAS_DisplayArray *data, unsigned int indices)
 	// Generate Buffers
 	glGenBuffersARB(1, &m_ibo);
 	glGenBuffersARB(1, &m_vbo_id);
+	// Generate Vertex Array Object
+	glGenVertexArrays(1, &m_vao);
 
 	// Fill the buffers with initial data
 	UpdateIndices();
@@ -76,8 +79,20 @@ void VBO::UpdateIndices()
 	             m_data->m_index.data(), GL_STATIC_DRAW);
 }
 
+void VBO::SetMeshModified(RAS_IRasterizer::DrawType drawType, bool modified)
+{
+	if (modified) {
+		m_vaoInit = false;
+	}
+}
+
 void VBO::Bind(int texco_num, RAS_IRasterizer::TexCoGen *texco, int attrib_num, RAS_IRasterizer::TexCoGen *attrib, int *attrib_layer)
 {
+	glBindVertexArray(m_vao);
+	if (m_vaoInit) {
+		return;
+	}
+	m_vaoInit = true;
 	int unit;
 
 	// Bind buffers
@@ -167,24 +182,7 @@ void VBO::Bind(int texco_num, RAS_IRasterizer::TexCoGen *texco, int attrib_num, 
 
 void VBO::Unbind(int attrib_num, int texco_num)
 {
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_NORMAL_ARRAY);
-	glDisableClientState(GL_COLOR_ARRAY);
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
-	for (unsigned int unit = 0; unit < texco_num; ++unit) {
-		glClientActiveTextureARB(GL_TEXTURE0_ARB + unit);
-		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	}
-	glClientActiveTextureARB(GL_TEXTURE0_ARB);
-
-	if (GLEW_ARB_vertex_program) {
-		for (int i = 0; i < attrib_num; ++i)
-			glDisableVertexAttribArrayARB(i);
-	}
-
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+	glBindVertexArray(0);
 }
 
 void VBO::Draw()

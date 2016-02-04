@@ -48,6 +48,8 @@ public:
 	void UpdateData();
 	void UpdateIndices();
 
+	virtual void SetMeshModified(RAS_IRasterizer::DrawType drawType, bool modified);
+
 private:
 	RAS_DisplayArray *m_data;
 	GLuint m_size;
@@ -56,6 +58,8 @@ private:
 	GLenum m_mode;
 	GLuint m_ibo;
 	GLuint m_vbo_id;
+	GLuint m_vao;
+	bool m_vaoInit;
 
 	void *m_vertex_offset;
 	void *m_normal_offset;
