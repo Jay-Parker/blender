@@ -44,7 +44,6 @@
 #include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
 
-#include "CTR_Map.h"
 #include "STR_HashedString.h"
 #include "BLI_math.h"
 
@@ -58,11 +57,13 @@ bool BL_MeshDeformer::Apply(RAS_IPolyMaterial *)
 	{
 		// For each material
 		for (list<RAS_MeshMaterial>::iterator mit = m_pMeshObject->GetFirstMaterial();
-		     mit != m_pMeshObject->GetLastMaterial(); ++mit) {
-			if (!mit->m_slots[(void *)m_gameobj->getClientInfo()])
+		     mit != m_pMeshObject->GetLastMaterial(); ++mit)
+		{
+			RAS_MeshSlot *slot = mit->m_slots[(void *)m_gameobj->getClientInfo()];
+			if (!slot) {
 				continue;
+			}
 
-			RAS_MeshSlot *slot = *mit->m_slots[(void *)m_gameobj->getClientInfo()];
 			RAS_DisplayArray *array = slot->GetDisplayArray();
 
 			//	For each vertex
@@ -97,14 +98,9 @@ void BL_MeshDeformer::ProcessReplica()
 	m_lastDeformUpdate = -1.0;
 }
 
-void BL_MeshDeformer::Relink(CTR_Map<class CTR_HashedPtr, void *> *map)
+void BL_MeshDeformer::Relink(std::map<void *, void *>& map)
 {
-	void **h_obj = (*map)[m_gameobj];
-
-	if (h_obj)
-		m_gameobj = (BL_DeformableGameObject *)(*h_obj);
-	else
-		m_gameobj = NULL;
+	m_gameobj = (BL_DeformableGameObject *)map[m_gameobj];
 }
 
 /**
@@ -129,10 +125,11 @@ void BL_MeshDeformer::RecalcNormals()
 
 	/* add face normals to vertices. */
 	for (mit = m_pMeshObject->GetFirstMaterial(); mit != m_pMeshObject->GetLastMaterial(); ++mit) {
-		if (!mit->m_slots[(void *)m_gameobj->getClientInfo()])
+		RAS_MeshSlot *slot = mit->m_slots[(void *)m_gameobj->getClientInfo()];
+		if (!slot) {
 			continue;
+		}
 
-		RAS_MeshSlot *slot = *mit->m_slots[(void *)m_gameobj->getClientInfo()];
 		RAS_DisplayArray *array = slot->GetDisplayArray();
 
 		for (i = 0; i < array->m_index.size(); i += 3) {
@@ -180,10 +177,11 @@ void BL_MeshDeformer::RecalcNormals()
 
 	/* assign smooth vertex normals */
 	for (mit = m_pMeshObject->GetFirstMaterial(); mit != m_pMeshObject->GetLastMaterial(); ++mit) {
-		if (!mit->m_slots[(void *)m_gameobj->getClientInfo()])
+		RAS_MeshSlot *slot = mit->m_slots[(void *)m_gameobj->getClientInfo()];
+		if (!slot) {
 			continue;
+		}
 
-		RAS_MeshSlot *slot = *mit->m_slots[(void *)m_gameobj->getClientInfo()];
 		RAS_DisplayArray *array = slot->GetDisplayArray();
 
 		for (i = 0; i < array->m_vertex.size(); i++) {
