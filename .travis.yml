@@ -1,7 +1,12 @@
 language: cpp
-compiler:
-- gcc
+sudo: required
+git:
+    submodules: false
 os:
 - linux
+before_install:
+- sudo apt-get -qq update
+- sudo apt-get upgrade -y
+- sudo ./build_files/build_environment/install_deps.sh --skip-osl --skip-oiio --skip-ocio --skip-numpy --skip-boost --skip-openvdb --skip-opencollada --skip-ffmpeg --skip-osd --skip-openexr --no-confirm
 script:
-- make
+- make lite
