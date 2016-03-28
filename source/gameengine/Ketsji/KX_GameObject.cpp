@@ -1949,7 +1949,7 @@ PyMethodDef KX_GameObject::Methods[] = {
 
 PyAttributeDef KX_GameObject::Attributes[] = {
 	KX_PYATTRIBUTE_INT_RO("currentLodLevel", KX_GameObject, m_currentLodLevel),
-	KX_PYATTRIBUTE_RO_FUNCTION("name",		KX_GameObject, pyattr_get_name),
+	KX_PYATTRIBUTE_RW_FUNCTION("name",		KX_GameObject, pyattr_get_name, pyattr_set_name),
 	KX_PYATTRIBUTE_RO_FUNCTION("parent",	KX_GameObject, pyattr_get_parent),
 	KX_PYATTRIBUTE_RO_FUNCTION("groupMembers",	KX_GameObject, pyattr_get_group_members),
 	KX_PYATTRIBUTE_RO_FUNCTION("groupObject",	KX_GameObject, pyattr_get_group_object),
@@ -2244,6 +2244,31 @@ PyObject *KX_GameObject::pyattr_get_name(void *self_v, const KX_PYATTRIBUTE_DEF 
 {
 	KX_GameObject* self = static_cast<KX_GameObject*>(self_v);
 	return PyUnicode_From_STR_String(self->GetName());
+}
+
+int KX_GameObject::pyattr_set_name(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef, PyObject *value)
+{
+	KX_GameObject *self = static_cast<KX_GameObject *>(self_v);
+
+	if (!PyUnicode_Check(value)) {
+		PyErr_SetString(PyExc_TypeError, "gameOb.name = str: KX_GameObject, expected a string");
+		return PY_SET_ATTR_FAIL;
+	}
+
+	STR_String newname = STR_String(_PyUnicode_AsString(value));
+	STR_String oldname = self->GetName();
+
+	// Change the name
+	self->SetName(newname);
+
+	SCA_LogicManager *manager = self->GetScene()->GetLogicManager();
+
+	// If true, it mean that's this game object is not a replica and was added at conversion time.
+	if (manager->GetGameObjectByName(oldname) == self) {
+		manager->UnregisterGameObjectName(oldname);
+		manager->RegisterGameObjectName(newname, self);
+	}
+	return PY_SET_ATTR_SUCCESS;
 }
 
 PyObject *KX_GameObject::pyattr_get_parent(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
