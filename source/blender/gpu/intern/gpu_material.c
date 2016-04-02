@@ -1408,8 +1408,8 @@ static void do_material_tex(GPUShadeInput *shi)
 				if (mtex->mapto & MAP_COL) {
 					GPUNodeLink *colfac;
 
-					if (mtex->colfac == 1.0f) colfac = stencil;
-					else GPU_link(mat, "math_multiply", GPU_dynamic_uniform(&mtex->colfac, GPU_DYNAMIC_TEX_COLFAC, NULL), stencil, &colfac);
+					//if (mtex->colfac == 1.0f) colfac = stencil;
+					GPU_link(mat, "math_multiply", GPU_dynamic_uniform(&mtex->colfac, GPU_DYNAMIC_TEX_COLFAC, NULL), stencil, &colfac);
 
 					texture_rgb_blend(mat, tcol, shi->rgb, tin, colfac, mtex->blendtype, &shi->rgb);
 				}
@@ -1417,8 +1417,8 @@ static void do_material_tex(GPUShadeInput *shi)
 				if (!(mat->scene->gm.flag & GAME_GLSL_NO_EXTRA_TEX) && (mtex->mapto & MAP_COLSPEC)) {
 					GPUNodeLink *colspecfac;
 
-					if (mtex->colspecfac == 1.0f) colspecfac = stencil;
-					else GPU_link(mat, "math_multiply", GPU_dynamic_uniform(&mtex->colspecfac, GPU_DYNAMIC_TEX_SPECFAC, NULL), stencil, &colspecfac);
+					//if (mtex->colspecfac == 1.0f) colspecfac = stencil;
+					GPU_link(mat, "math_multiply", GPU_dynamic_uniform(&mtex->colspecfac, GPU_DYNAMIC_TEX_SPECFAC, NULL), stencil, &colspecfac);
 
 					texture_rgb_blend(mat, tcol, shi->specrgb, tin, colspecfac, mtex->blendtype, &shi->specrgb);
 				}
@@ -1426,8 +1426,8 @@ static void do_material_tex(GPUShadeInput *shi)
 				if (mtex->mapto & MAP_COLMIR) {
 					GPUNodeLink *colmirfac;
 
-					if (mtex->mirrfac == 1.0f) colmirfac = stencil;
-					else GPU_link(mat, "math_multiply", GPU_dynamic_uniform(&mtex->mirrfac, GPU_DYNAMIC_TEX_MIRROR, NULL), stencil, &colmirfac);
+					//if (mtex->mirrfac == 1.0f) colmirfac = stencil;
+					GPU_link(mat, "math_multiply", GPU_dynamic_uniform(&mtex->mirrfac, GPU_DYNAMIC_TEX_MIRROR, NULL), stencil, &colmirfac);
 
 					/* exception for envmap only */
 					if (tex->type == TEX_ENVMAP && mtex->blendtype == MTEX_BLEND) {
@@ -1479,17 +1479,17 @@ static void do_material_tex(GPUShadeInput *shi)
 						
 						float norfac = min_ff(fabsf(mtex->norfac), 1.0f);
 						
-						if (norfac == 1.0f && !GPU_link_changed(stencil)) {
-							shi->vn = newnor;
-						}
-						else {
-							tnorfac = GPU_dynamic_uniform(&mtex->norfac, GPU_DYNAMIC_TEX_NORMAL, NULL);
+						//if (norfac == 1.0f && !GPU_link_changed(stencil)) {
+							//shi->vn = newnor;
+						//}
+						//else {
+						tnorfac = GPU_dynamic_uniform(&mtex->norfac, GPU_DYNAMIC_TEX_NORMAL, NULL);
 
-							if (GPU_link_changed(stencil))
-								GPU_link(mat, "math_multiply", tnorfac, stencil, &tnorfac);
+						//if (GPU_link_changed(stencil))
+						GPU_link(mat, "math_multiply", tnorfac, stencil, &tnorfac);
 	
-							GPU_link(mat, "mtex_blend_normal", tnorfac, shi->vn, newnor, &shi->vn);
-						}
+						GPU_link(mat, "mtex_blend_normal", tnorfac, shi->vn, newnor, &shi->vn);
+						//}
 						
 					}
 					else if (found_deriv_map ||
@@ -1648,8 +1648,8 @@ static void do_material_tex(GPUShadeInput *shi)
 				if (!(mat->scene->gm.flag & GAME_GLSL_NO_EXTRA_TEX) && mtex->mapto & MAP_REF) {
 					GPUNodeLink *difffac;
 
-					if (mtex->difffac == 1.0f) difffac = stencil;
-					else GPU_link(mat, "math_multiply", GPU_dynamic_uniform(&mtex->difffac, GPU_DYNAMIC_TEX_COLINTENS, NULL), stencil, &difffac);
+					//if (mtex->difffac == 1.0f) difffac = stencil;
+					GPU_link(mat, "math_multiply", GPU_dynamic_uniform(&mtex->difffac, GPU_DYNAMIC_TEX_COLINTENS, NULL), stencil, &difffac);
 
 					texture_value_blend(
 					        mat, GPU_uniform(&mtex->def_var), shi->refl, tin, difffac,
@@ -1659,8 +1659,8 @@ static void do_material_tex(GPUShadeInput *shi)
 				if (!(mat->scene->gm.flag & GAME_GLSL_NO_EXTRA_TEX) && mtex->mapto & MAP_SPEC) {
 					GPUNodeLink *specfac;
 
-					if (mtex->specfac == 1.0f) specfac = stencil;
-					else GPU_link(mat, "math_multiply", GPU_dynamic_uniform(&mtex->specfac, GPU_DYNAMIC_TEX_SPECINTENS, NULL), stencil, &specfac);
+					//if (mtex->specfac == 1.0f) specfac = stencil;
+					GPU_link(mat, "math_multiply", GPU_dynamic_uniform(&mtex->specfac, GPU_DYNAMIC_TEX_SPECINTENS, NULL), stencil, &specfac);
 
 					texture_value_blend(
 					        mat, GPU_uniform(&mtex->def_var), shi->spec, tin, specfac,
@@ -1670,8 +1670,8 @@ static void do_material_tex(GPUShadeInput *shi)
 				if (!(mat->scene->gm.flag & GAME_GLSL_NO_EXTRA_TEX) && mtex->mapto & MAP_EMIT) {
 					GPUNodeLink *emitfac;
 
-					if (mtex->emitfac == 1.0f) emitfac = stencil;
-					else GPU_link(mat, "math_multiply", GPU_dynamic_uniform(&mtex->emitfac, GPU_DYNAMIC_TEX_EMIT, NULL), stencil, &emitfac);
+					//if (mtex->emitfac == 1.0f) emitfac = stencil;
+					GPU_link(mat, "math_multiply", GPU_dynamic_uniform(&mtex->emitfac, GPU_DYNAMIC_TEX_EMIT, NULL), stencil, &emitfac);
 
 					texture_value_blend(
 					        mat, GPU_uniform(&mtex->def_var), shi->emit, tin, emitfac,
@@ -1681,8 +1681,8 @@ static void do_material_tex(GPUShadeInput *shi)
 				if (!(mat->scene->gm.flag & GAME_GLSL_NO_EXTRA_TEX) && mtex->mapto & MAP_HAR) {
 					GPUNodeLink *hardfac;
 
-					if (mtex->hardfac == 1.0f) hardfac = stencil;
-					else GPU_link(mat, "math_multiply", GPU_dynamic_uniform(&mtex->hardfac, GPU_DYNAMIC_TEX_HARDNESS, NULL), stencil, &hardfac);
+					//if (mtex->hardfac == 1.0f) hardfac = stencil;
+					GPU_link(mat, "math_multiply", GPU_dynamic_uniform(&mtex->hardfac, GPU_DYNAMIC_TEX_HARDNESS, NULL), stencil, &hardfac);
 
 					GPU_link(mat, "mtex_har_divide", shi->har, &shi->har);
 					texture_value_blend(
@@ -1693,8 +1693,8 @@ static void do_material_tex(GPUShadeInput *shi)
 				if (mtex->mapto & MAP_ALPHA) {
 					GPUNodeLink *alphafac;
 
-					if (mtex->alphafac == 1.0f) alphafac = stencil;
-					else GPU_link(mat, "math_multiply", GPU_dynamic_uniform(&mtex->alphafac, GPU_DYNAMIC_TEX_ALPHA, NULL), stencil, &alphafac);
+					//if (mtex->alphafac == 1.0f) alphafac = stencil;
+					GPU_link(mat, "math_multiply", GPU_dynamic_uniform(&mtex->alphafac, GPU_DYNAMIC_TEX_ALPHA, NULL), stencil, &alphafac);
 
 					texture_value_blend(
 					        mat, GPU_uniform(&mtex->def_var), shi->alpha, tin, alphafac,
